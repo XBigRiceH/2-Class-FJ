@@ -17,6 +17,7 @@ class class_2:
         # some const and pls replace it by yourself //TODO
         self.DRIVER_PATH = '/opt/driver/bin/chromedriver'
         self.PATH = ""
+        self.GRADE = "%E9%AB%98%E4%BA%8C" # URL ENCODED
         
         self.SID = ""
         self.REQUESTS_TOKEN = ""
@@ -103,7 +104,7 @@ class class_2:
             while len(courses_result.json()['data']['list']) == 96:
                 index += 1
                 courses_result = requests.get(
-                    f"https://www.2-class.com/api/course/getHomepageCourseList?grade=%E9%AB%98%E4%BA%8C&pageSize=96&pageNo={index}",
+                    f"https://www.2-class.com/api/course/getHomepageCourseList?grade={self.GRADE}&pageSize=96&pageNo={index}",
                     headers="https://www.2-class.com/api/course", verify=False)
                 for i in courses_result.json()['data']['list']:
                     if i['isFinish']:
