@@ -6,11 +6,18 @@ import random
 import re
 import warnings
 import requests
+from selenium.webdriver import Chrome
+from selenium.webdriver.chrome.options import Options
 warnings.filterwarnings('ignore')
 
 
 class class_2:
     def __init__(self, usr, pwd):
+        
+        # some const and pls replace it by yourself //TODO
+        self.DRIVER_PATH = '/opt/driver/bin/chromedriver'
+        self.PATH = ""
+        
         self.SID = ""
         self.REQUESTS_TOKEN = ""
         self.USER = usr
@@ -66,29 +73,6 @@ class class_2:
             return False
         self.logs.append(f"[+] {self.USER} 已登陆")
         return True
-
-    # 检查是否高二
-    def check(self):
-        try:
-            return requests.get("https://www.2-class.com/api/course/getMycourseList?state=all&pageNo=1&pageSize=1000",
-                                headers={
-                                    "Accept": "*/*",
-                                    "Accept-Encoding": "gzip, deflate, br",
-                                    "Accept-Language": "en-US,en;q=0.9,zh-CN;q=0.8,zh-TW;q=0.7,zh;q=0.6",
-                                    "Connection": "keep-alive",
-                                    "Cookie": f"sid={self.SID}",
-                                    "Host": "www.2-class.com",
-                                    "Referer": "https://www.2-class.com/admin/student_course",
-                                    "sec-ch-ua": '"Google Chrome";v="95", "Chromium";v="95", ";Not A Brand";v="99"',
-                                    "sec-ch-ua-mobile": "?0",
-                                    "sec-ch-ua-platform": '"Windows"',
-                                    "Sec-Fetch-Dest": "empty",
-                                    "Sec-Fetch-Mode": "cors",
-                                    "Sec-Fetch-Site": "same-origin",
-                                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.54 Safari/537.36"
-                                }, verify=False).text.count("高二") > 0
-        except Exception:
-            return False
 
     # 获取待做普通题
     def get_courses(self):
@@ -177,7 +161,6 @@ class class_2:
                 "examCommitReqDataList": examCommitReqDataList
             })).json()['success']
         except Exception:
-            self.logs.append(f"[-] 普通题 {task_id} 作答失败")
             return False
 
     # 期末考试
@@ -336,7 +319,31 @@ class class_2:
         except Exception:
             self.logs.append("[-] 知识竞赛作答失败")
             return False
-
+    # 获取截图
+        def get_screenshot(self):
+            try:
+                options = Options()
+                options.add_argument('--no-sandbox')
+                options.add_argument('--headless')
+                options.add_argument('--disable-gpu')
+                driver = Chrome(executable_path=self.DRIVER_PATH, options=options)
+                driver.maximize_window()
+                driver.get("https://www.2-class.com/api")
+                driver.add_cookie(cookie_dict={"name": "sid", "value": self.SID})
+                driver.get("https://www.2-class.com/competition")
+                driver.execute_script("document.documentElement.style.overflowY = 'hidden';")
+                scroll_width = 1350
+                scroll_height = 1080
+                driver.set_window_size(scroll_width, scroll_height)
+                filename = str(self.USER)
+                filename = f"{self.PATH}\\{filename}.png"
+                driver.get_screenshot_as_file(filename)
+                driver.close()
+                driver.quit()
+                return filename
+            except Exception:
+                return None
+        
     # 主入口
     def do(self):
 
@@ -346,11 +353,6 @@ class class_2:
 
         # 获取登录态
         if not self.login():
-            return self.logs
-
-        # 检查高二号
-        if not self.check():
-            self.logs.append("[-] 非高二账号或系统错误")
             return self.logs
 
         # 处理待做普通题
@@ -375,4 +377,4 @@ class class_2:
         if not self.finish_competition():
             return self.logs
 
-        return self.logs
+        return self.logs, self.get_screenshot()
